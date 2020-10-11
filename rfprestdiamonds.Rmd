@@ -1,0 +1,50 @@
+---
+title: "Machine Learning: Predicting the Cut of a Diamond"
+author: "Shakespeare"
+date: "October 10, 2020"
+output: html_document
+---
+
+```{r}
+library(neuralnet)
+library(caret)
+library(tidyverse)
+```
+
+```{r}
+df = diamonds%>%
+  filter(cut %in% c("Ideal","Good"))
+
+df = sample_n(df, 5000)
+
+df$binary = ifelse(df$cut == "Ideal", 1, 0) 
+```
+
+```{r}
+df$binary = as.factor(df$binary) 
+
+df = df[,-2] # take out cut since we create the factor bynary
+```
+
+```{r}
+rows = createDataPartition(df$binary, p = 0.7, list = F, times = 1)
+
+train = df[rows,]
+test = df[-rows,]
+```
+
+```{r}
+control = trainControl(method = "repeatedcv", number = 2, repeats = 2)
+
+model = train(binary ~ .,data = train, 
+              method = "ranger",
+              trControl = control)
+model
+```
+
+```{r}
+pred = predict(model, test)
+
+confusionMatrix(pred, test$binary)
+```
+
